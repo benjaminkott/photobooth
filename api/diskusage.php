@@ -2,7 +2,7 @@
 
 header('Content-Type: application/json');
 
-require_once '../lib/config.php';
+require_once '../lib/boot.php';
 require_once '../lib/hzip.php';
 
 $data = $_POST;

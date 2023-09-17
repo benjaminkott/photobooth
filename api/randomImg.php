@@ -8,7 +8,7 @@
 
 *****************************************************/
 
-require_once '../lib/config.php';
+require_once '../lib/boot.php';
 
 if (isset($_GET['dir']) && !empty($_GET['dir'])) {
     $dir = $_GET['dir'];

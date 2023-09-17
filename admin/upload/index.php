@@ -1,9 +1,7 @@
 <?php
-session_start();
 
 $fileRoot = '../../';
-
-require_once $fileRoot . 'lib/config.php';
+require_once $fileRoot . 'lib/boot.php';
 
 // Login / Authentication check
 if (

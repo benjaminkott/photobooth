@@ -2,11 +2,11 @@
 
 header('Content-Type: application/json');
 
-require_once '../lib/config.php';
-require_once '../lib/db.php';
-require_once '../lib/printdb.php';
-require_once '../lib/image.php';
-require_once '../lib/log.php';
+require_once '../lib/boot.php';
+
+use Photobooth\DataLogger;
+use Photobooth\PrintManager;
+use Photobooth\Image;
 
 $Logger = new DataLogger(PHOTOBOOTH_LOG);
 $Logger->addLogData(['php' => basename($_SERVER['PHP_SELF'])]);
@@ -146,7 +146,7 @@ if (!file_exists($filename_print)) {
         imagedestroy($source);
     } catch (Exception $e) {
         // Try to clear cache
-        if (is_resource($source)) {
+        if ($source instanceof GdImage) {
             imagedestroy($source);
         }
         // log error and die

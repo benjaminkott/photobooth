@@ -3,6 +3,11 @@
     "type": "project",
     "license": "MIT",
     "require": {},
+    "autoload": {
+        "psr-4": {
+            "Photobooth\\": "lib/src/"
+        }
+    },
     "scripts": {
         "post-install-cmd": [
             "@tools:install"

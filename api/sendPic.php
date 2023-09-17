@@ -2,15 +2,14 @@
 
 header('Content-Type: application/json');
 
-use PHPMailer\PHPMailer\PHPMailer;
-
+require_once '../lib/boot.php';
 require '../vendor/PHPMailer/src/Exception.php';
 require '../vendor/PHPMailer/src/PHPMailer.php';
 require '../vendor/PHPMailer/src/SMTP.php';
 
-require_once '../lib/config.php';
-require_once '../lib/db.php';
-require_once '../lib/log.php';
+use Photobooth\DataLogger;
+use Photobooth\DatabaseManager;
+use PHPMailer\PHPMailer\PHPMailer;
 
 $Logger = new DataLogger(PHOTOBOOTH_LOG);
 $Logger->addLogData(['php' => basename($_SERVER['PHP_SELF'])]);

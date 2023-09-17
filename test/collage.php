@@ -2,9 +2,10 @@
 
 $fileRoot = '../';
 
-require_once $fileRoot . 'lib/config.php';
-require_once $fileRoot . 'lib/collage.php';
-require_once $fileRoot . 'lib/image.php';
+require_once $fileRoot . 'lib/boot.php';
+
+use Photobooth\Collage;
+use Photobooth\Image;
 
 $demoPath = __DIR__ . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . 'resources/img/demo';
 $demoFolder = realpath($demoPath);
@@ -41,7 +42,7 @@ for ($i = 0; $i < $config['collage']['limit']; $i++) {
 }
 
 $filename_tmp = $config['foldersAbs']['tmp'] . DIRECTORY_SEPARATOR . 'result_' . $name;
-if (createCollage($collageSrcImagePaths, $filename_tmp, $config['filters']['defaults'])) {
+if (Collage::createCollage($collageSrcImagePaths, $filename_tmp, $config['filters']['defaults'])) {
     for ($k = 0; $k < $config['collage']['limit']; $k++) {
         unlink($collageSrcImagePaths[$k]);
     }

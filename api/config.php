@@ -1,7 +1,7 @@
 <?php
 header('Content-Type: application/javascript');
 
-require '../lib/config.php';
+require '../lib/boot.php';
 
 // Override secret configuration we don't need access from javascript for
 $config['mail']['password'] = 'secret';

@@ -12,11 +12,13 @@ if (!isset($_POST['imgData']) || empty($_POST['imgData'])) {
     die($logString);
 }
 
-require_once '../../lib/config.php';
-require_once '../../lib/db.php';
-require_once '../../lib/image.php';
-require_once '../../lib/log.php';
-require_once '../../lib/deleteFile.php';
+require_once '../../lib/boot.php';
+
+use Photobooth\Image;
+use Photobooth\ImageFilter;
+use Photobooth\DatabaseManager;
+use Photobooth\DataLogger;
+use Photobooth\FileDelete;
 
 $imageHandler = new Image();
 $imageHandler->debugLevel = $config['dev']['loglevel'];
@@ -94,7 +96,7 @@ try {
         // apply filter
         if ($config['filters']['defaults'] != 'plain') {
             try {
-                applyFilter($config['filters']['defaults'], $imageResource);
+                ImageFilter::applyFilter($config['filters']['defaults'], $imageResource);
                 $imageHandler->imageModified = true;
             } catch (Exception $e) {
                 throw new Exception('Error applying image filter.');

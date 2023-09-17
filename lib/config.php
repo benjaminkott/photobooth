@@ -5,9 +5,10 @@ define('SERVER_OS', DIRECTORY_SEPARATOR == '\\' || strtolower(substr(PHP_OS, 0, 
 if (is_file(__DIR__ . '/../private/lib/polyfill.php')) {
     require_once __DIR__ . '/../private/lib/polyfill.php';
 }
-require_once __DIR__ . '/arrayDeepMerge.php';
-require_once __DIR__ . '/helper.php';
-require_once __DIR__ . '/photobooth.php';
+
+use Photobooth\Photobooth;
+use Photobooth\Helper;
+use Photobooth\Utility\ArrayUtility;
 
 $photobooth = new Photobooth();
 $default_config_file = __DIR__ . '/../config/config.inc.php';
@@ -137,7 +138,7 @@ if (file_exists($my_config_file)) {
         }
     }
 
-    $config = array_deep_merge($defaultConfig, $config);
+    $config = ArrayUtility::array_deep_merge($defaultConfig, $config);
 }
 
 if ($config['dev']['loglevel'] > 0) {
@@ -286,7 +287,7 @@ if (!empty($config['ftp']['urlTemplate'])) {
             '%title' => Helper::slugify($config['ftp']['title']),
             '%date' => date('Y/m/d'),
         ];
-    } catch (Exception $e) {
+    } catch (\Exception $e) {
         $parameters = [
             '%website' => $config['ftp']['website'],
             '%baseFolder' => $config['ftp']['baseFolder'],
