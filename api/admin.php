@@ -2,7 +2,7 @@
 
 require_once '../lib/boot.php';
 
-use Photobooth\Helper;
+use Photobooth\Service\ConfigurationService;
 use Photobooth\DataLogger;
 use Photobooth\PrintManager;
 use Photobooth\Environment;
@@ -252,11 +252,10 @@ if (isset($data['type'])) {
         }
     }
 
-    $content = "<?php\n\$config = " . var_export(Helper::arrayRecursiveDiff($newConfig, $defaultConfig), true) . ';';
-
-    if (file_put_contents(PathUtility::getAbsolutePath('config/my.config.inc.php'), $content)) {
-        Helper::clearCache(PathUtility::getAbsolutePath('config/my.config.inc.php'));
-        $Logger->addLogData(['config' => 'New config saved']);
+    try {
+        $configurationManager = ConfigurationService::getInstance();
+        $configurationManager->updateConfiguration($newConfig);
+        $configurationManager->writeConfiguration();
 
         if ($data['type'] == 'reset') {
             $Logger->addLogData(['reset' => 'Resetting Photobooth']);
@@ -281,7 +280,6 @@ if (isset($data['type'])) {
                     }
                 }
             }
-
             if ($newConfig['reset']['remove_print_db']) {
                 $printManager = new PrintManager();
                 $printManager->printDb = PRINT_DB;
@@ -298,20 +296,16 @@ if (isset($data['type'])) {
                     $Logger->addLogData(['print.count' => 'deleted']);
                 }
             }
-
             if ($newConfig['reset']['remove_mailtxt']) {
                 if (is_file(MAIL_FILE)) {
                     unlink(MAIL_FILE); // delete file
                     $Logger->addLogData([MAIL_FILE => 'deleted']);
                 }
             }
-
             if ($newConfig['reset']['remove_config']) {
-                // delete personal config
-                if (is_file(PathUtility::getAbsolutePath('config/my.config.inc.php'))) {
-                    unlink(PathUtility::getAbsolutePath('config/my.config.inc.php'));
-                    $Logger->addLogData(['my.config.inc.php' => 'deleted']);
-                }
+                $configurationManager->updateConfiguration([]);
+                $configurationManager->writeConfiguration();
+                $Logger->addLogData(['my.config.inc.php' => 'resetted']);
             }
 
             $logFiles = glob($config['foldersAbs']['tmp'] . '/*.log');
@@ -332,10 +326,11 @@ if (isset($data['type'])) {
             }
         }
         echo json_encode('success');
-    } else {
+    } catch (\Exception $exception) {
         $Logger->addLogData(['config' => 'ERROR: Config can not be saved!']);
         echo json_encode('error');
     }
+
 } else {
     $Logger->addLogData(['type' => 'ERROR: Unknown action.']);
     $Logger->logToFile();

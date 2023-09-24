@@ -4,10 +4,10 @@ if (is_file(__DIR__ . '/../private/lib/polyfill.php')) {
     require_once __DIR__ . '/../private/lib/polyfill.php';
 }
 
+use Photobooth\Service\ConfigurationService;
 use Photobooth\Environment;
 use Photobooth\Photobooth;
 use Photobooth\Helper;
-use Photobooth\Utility\ArrayUtility;
 use Photobooth\Utility\PathUtility;
 
 $photobooth = new Photobooth();
@@ -95,74 +95,40 @@ $mailTemplates = [
     ],
 ];
 
-require_once PathUtility::getAbsolutePath('config/config.inc.php');
-
 $environment = new Environment();
-$config['take_picture']['cmd'] = $cmds[$environment->getOperatingSystem()]['take_picture']['cmd'];
-$config['take_video']['cmd'] = $cmds[$environment->getOperatingSystem()]['take_video']['cmd'];
-$config['print']['cmd'] = $cmds[$environment->getOperatingSystem()]['print']['cmd'];
-$config['exiftool']['cmd'] = $cmds[$environment->getOperatingSystem()]['exiftool']['cmd'];
-$config['nodebin']['cmd'] = $cmds[$environment->getOperatingSystem()]['nodebin']['cmd'];
-$config['reboot']['cmd'] = $cmds[$environment->getOperatingSystem()]['reboot']['cmd'];
-$config['shutdown']['cmd'] = $cmds[$environment->getOperatingSystem()]['shutdown']['cmd'];
+$configurationManager = ConfigurationService::getInstance();
+$configurationManager
+    ->setByPath('take_picture/cmd', $cmds[$environment->getOperatingSystem()]['take_picture']['cmd'])
+    ->setByPath('take_video/cmd', $cmds[$environment->getOperatingSystem()]['take_video']['cmd'])
+    ->setByPath('print/cmd', $cmds[$environment->getOperatingSystem()]['print']['cmd'])
+    ->setByPath('exiftool', $cmds[$environment->getOperatingSystem()]['exiftool']['cmd'])
+    ->setByPath('nodebin', $cmds[$environment->getOperatingSystem()]['nodebin']['cmd'])
+    ->setByPath('reboot', $cmds[$environment->getOperatingSystem()]['reboot']['cmd'])
+    ->setByPath('shutdown', $cmds[$environment->getOperatingSystem()]['shutdown']['cmd'])
+    ->setByPath('remotebuzzer/logfile', 'remotebuzzer_server.log')
+    ->setByPath('synctodrive/logfile', 'synctodrive_server.log')
+    ->setByPath('dev/logfile', 'error.log')
+;
 
-$config['adminpanel']['view_default'] = 'expert';
-
-$config['remotebuzzer']['logfile'] = 'remotebuzzer_server.log';
-$config['synctodrive']['logfile'] = 'synctodrive_server.log';
-$config['dev']['logfile'] = 'error.log';
-
-$config['ui']['github'] = 'PhotoboothProject';
-$config['ui']['branding'] = 'Photobooth';
-
-$defaultConfig = $config;
-
-if (file_exists(PathUtility::getAbsolutePath('config/my.config.inc.php'))) {
-    require_once PathUtility::getAbsolutePath('config/my.config.inc.php');
-
-    if (empty($config['mail']['subject'])) {
-        if (!empty($config['ui']['language'])) {
-            $config['mail']['subject'] = $mailTemplates[$config['ui']['language']]['mail']['subject'];
-        } else {
-            $config['mail']['subject'] = $mailTemplates[$defaultConfig['ui']['language']]['mail']['subject'];
-        }
-    }
-    if (empty($config['mail']['text'])) {
-        if (!empty($config['ui']['language'])) {
-            $config['mail']['text'] = $mailTemplates[$config['ui']['language']]['mail']['text'];
-        } else {
-            $config['mail']['text'] = $mailTemplates[$defaultConfig['ui']['language']]['mail']['text'];
-        }
-    }
-
-    $config = ArrayUtility::array_deep_merge($defaultConfig, $config);
+if ($configurationManager->getByPath('mail/subject') === '') {
+    $configurationManager->setByPath('mail/subject', $mailTemplates[$configurationManager->getByPath('ui/language')]['mail']['subject']);
+}
+if ($configurationManager->getByPath('mail/text') === '') {
+    $configurationManager->setByPath('mail/text', $mailTemplates[$configurationManager->getByPath('ui/language')]['mail']['text']);
 }
 
-if ($config['dev']['loglevel'] > 0) {
-    ini_set('display_errors', 1);
-    ini_set('display_startup_errors', 1);
-    error_reporting(E_ALL);
+if ($configurationManager->getByPath('ui/folders_lang') === '') {
+    $configurationManager->setByPath('ui/folders_lang', PathUtility::getPublicPath('resources/lang'));
 }
+$configurationManager->setByPath('ui/folders_lang', PathUtility::getPublicPath($configurationManager->getByPath('ui/folders_lang')));
 
-if (file_exists(PathUtility::getAbsolutePath('config/my.config.inc.php')) && !is_writable(PathUtility::getAbsolutePath('config/my.config.inc.php'))) {
-    die('Abort. Can not write config/my.config.inc.php.');
-} elseif (!file_exists(PathUtility::getAbsolutePath('config/my.config.inc.php')) && !is_writable(__DIR__ . '/../config/')) {
-    die('Abort. Can not create config/my.config.inc.php. Config folder is not writable.');
-}
-
-if (empty($config['ui']['folders_lang'])) {
-    $config['ui']['folders_lang'] = 'resources/lang';
-}
-
-$config['ui']['folders_lang'] = PathUtility::getPublicPath($config['ui']['folders_lang']);
-
-foreach ($config['folders'] as $key => $folder) {
+foreach ($configurationManager->getByPath('folders') as $key => $folder) {
     if ($folder === 'data' || $folder === 'archives' || $folder === 'config' || $folder === 'private') {
         $path = PathUtility::getAbsolutePath($folder);
     } else {
-        $path = PathUtility::getAbsolutePath($config['folders']['data'] . DIRECTORY_SEPARATOR . $folder);
-        $config['foldersRoot'][$key] = $config['folders']['data'] . DIRECTORY_SEPARATOR . $folder;
-        $config['foldersJS'][$key] = PathUtility::getPublicPath($path);
+        $path = PathUtility::getAbsolutePath($configurationManager->getByPath('folders/data') . DIRECTORY_SEPARATOR . $folder);
+        $configurationManager->setByPath('foldersRoot/' . $key, $configurationManager->getByPath('folders/data') . DIRECTORY_SEPARATOR . $folder);
+        $configurationManager->setByPath('foldersJS/' . $key, PathUtility::getPublicPath($path));
     }
 
     if (!file_exists($path)) {
@@ -173,24 +139,24 @@ foreach ($config['folders'] as $key => $folder) {
         die("Abort. The folder $folder is not writable.");
     }
 
-    $config['foldersAbs'][$key] = PathUtility::getAbsolutePath($path);
+    $configurationManager->setByPath('foldersAbs/' . $key, PathUtility::getAbsolutePath($path));
 }
 
-$config['foldersJS']['api'] = PathUtility::getPublicPath('api');
-$config['foldersJS']['chroma'] = PathUtility::getPublicPath('chroma');
+$configurationManager->setByPath('foldersJS/api', PathUtility::getPublicPath('api'));
+$configurationManager->setByPath('foldersJS/chroma', PathUtility::getPublicPath('chroma'));
 
-define('PRINT_DB', $config['foldersAbs']['data'] . DIRECTORY_SEPARATOR . 'printed.csv');
-define('PRINT_LOCKFILE', $config['foldersAbs']['data'] . DIRECTORY_SEPARATOR . 'print.lock');
-define('PRINT_COUNTER', $config['foldersAbs']['data'] . DIRECTORY_SEPARATOR . 'print.count');
-define('PHOTOBOOTH_LOG', $config['foldersAbs']['tmp'] . DIRECTORY_SEPARATOR . $config['dev']['logfile']);
+define('PRINT_DB', $configurationManager->getByPath('foldersAbs/data') . DIRECTORY_SEPARATOR . 'printed.csv');
+define('PRINT_LOCKFILE', $configurationManager->getByPath('foldersAbs/data') . DIRECTORY_SEPARATOR . 'print.lock');
+define('PRINT_COUNTER', $configurationManager->getByPath('foldersAbs/data') . DIRECTORY_SEPARATOR . 'print.count');
+define('PHOTOBOOTH_LOG', $configurationManager->getByPath('foldersAbs/tmp') . DIRECTORY_SEPARATOR . $configurationManager->getByPath('dev/logfile'));
 
-if ($config['preview']['mode'] === 'gphoto') {
-    $config['preview']['mode'] = 'device_cam';
+if ($configurationManager->getByPath('preview/mode') === 'gphoto') {
+    $configurationManager->setByPath('preview/mode', 'device_cam');
 }
 
 // Preview need to be stopped before we can take an image
-if (!empty($config['preview']['killcmd']) && $config['preview']['stop_time'] < $config['picture']['cntdwn_offset']) {
-    $config['preview']['stop_time'] = $config['picture']['cntdwn_offset'] + 1;
+if ($configurationManager->getByPath('preview/killcmd') !== '' && $configurationManager->getByPath('preview/stop_time') < $configurationManager->getByPath('picture/cntdwn_offset')) {
+    $configurationManager->setByPath('preview/stop_time', $configurationManager->getByPath('picture/cntdwn_offset') + 1);
 }
 
 $default_font = PathUtility::getPublicPath('resources/fonts/GreatVibes-Regular.ttf');
@@ -198,82 +164,70 @@ $default_frame = PathUtility::getPublicPath('resources/img/frames/frame.png');
 $random_frame = PathUtility::getPublicPath('api/randomImg.php?dir=demoframes');
 $default_template = realpath(PathUtility::getRootPath() . DIRECTORY_SEPARATOR . 'resources/template/index.php');
 
-if (empty($config['picture']['frame'])) {
-    $config['picture']['frame'] = $random_frame;
+if ($configurationManager->getByPath('picture/frame') === '') {
+    $configurationManager->setByPath('picture/frame', $random_frame);
+}
+if ($configurationManager->getByPath('textonpicture/font') === '') {
+    $configurationManager->setByPath('textonpicture/font', $default_font);
+}
+if ($configurationManager->getByPath('collage/frame') === '') {
+    $configurationManager->setByPath('collage/frame', $default_frame);
 }
 
-if (empty($config['textonpicture']['font'])) {
-    $config['textonpicture']['font'] = $default_font;
+if ($configurationManager->getByPath('collage/placeholderpath') === '') {
+    $configurationManager->setByPath('collage/placeholderpath', PathUtility::getPublicPath('resources/img/background/01.jpg'));
 }
-
-if (empty($config['collage']['frame'])) {
-    $config['collage']['frame'] = $default_frame;
+if ($configurationManager->getByPath('textoncollage/font') === '') {
+    $configurationManager->setByPath('textoncollage/font', $default_font);
 }
-
-if (empty($config['collage']['placeholderpath'])) {
-    $config['collage']['placeholderpath'] = PathUtility::getPublicPath('resources/img/background/01.jpg');
+if ($configurationManager->getByPath('print/frame') === '') {
+    $configurationManager->setByPath('print/frame', $default_frame);
 }
-
-if (empty($config['textoncollage']['font'])) {
-    $config['textoncollage']['font'] = $default_font;
+if ($configurationManager->getByPath('textonprint/font') === '') {
+    $configurationManager->setByPath('textonprint/font', $default_font);
 }
-
-if (empty($config['print']['frame'])) {
-    $config['print']['frame'] = $default_frame;
-}
-
-if (empty($config['textonprint']['font'])) {
-    $config['textonprint']['font'] = $default_font;
-}
-
-if (empty($config['collage']['limit'])) {
-    $config['collage']['limit'] = 4;
+if ($configurationManager->getByPath('collage/limit') === '') {
+    $configurationManager->setByPath('collage/limit', 4);
 }
 
 $bg_url = PathUtility::getPublicPath('resources/img/background.png');
 $logo_url = PathUtility::getPublicPath('resources/img/logo/logo-qrcode-text.png');
 
-if (empty($config['logo']['path'])) {
-    $config['logo']['path'] = $logo_url;
+if ($configurationManager->getByPath('logo/path') === '') {
+    $configurationManager->setByPath('logo/path', $logo_url);
+}
+if ($configurationManager->getByPath('background/defaults') === '') {
+    $configurationManager->setByPath('background/defaults', 'url(' . $bg_url . ')');
+}
+if ($configurationManager->getByPath('background/admin') === '') {
+    $configurationManager->setByPath('background/admin', 'url(' . $bg_url . ')');
+}
+if ($configurationManager->getByPath('background/chroma') === '') {
+    $configurationManager->setByPath('background/chroma', 'url(' . $bg_url . ')');
 }
 
-if (empty($config['background']['defaults'])) {
-    $config['background']['defaults'] = 'url(' . $bg_url . ')';
+if ($configurationManager->getByPath('preview/showFrame') !== '' && $configurationManager->getByPath('picture/frame') !== '') {
+    $configurationManager->setByPath('preview/htmlframe', $configurationManager->getByPath('picture/frame'));
+}
+if ($configurationManager->getByPath('preview/showFrame') !== '' && $configurationManager->getByPath('collage/frame') !== '') {
+    $configurationManager->setByPath('collage/htmlframe', $configurationManager->getByPath('collage/frame'));
 }
 
-if (empty($config['background']['admin'])) {
-    $config['background']['admin'] = 'url(' . $bg_url . ')';
+if ($configurationManager->getByPath('webserver/ip') === '') {
+    $configurationManager->setByPath('webserver/ip', $photobooth->getIp());
+}
+if ($configurationManager->getByPath('remotebuzzer/serverip') === '') {
+    $configurationManager->setByPath('remotebuzzer/serverip', $photobooth->getIp());
+}
+if ($configurationManager->getByPath('qr/url') === '') {
+    $configurationManager->setByPath('qr/url', PathUtility::getPublicPath('api/download.php?image='));
 }
 
-if (empty($config['background']['chroma'])) {
-    $config['background']['chroma'] = 'url(' . $bg_url . ')';
+if ($configurationManager->getByPath('ftp/template_location') === '' || !Helper::testFile($configurationManager->getByPath('ftp/template_location'))) {
+    $configurationManager->setByPath('ftp/template_location', $default_template);
 }
 
-if ($config['preview']['showFrame'] && !empty($config['picture']['frame'])) {
-    $config['picture']['htmlframe'] = $config['picture']['frame'];
-}
-
-if ($config['preview']['showFrame'] && !empty($config['collage']['frame'])) {
-    $config['collage']['htmlframe'] = $config['collage']['frame'];
-}
-
-if (empty($config['webserver']['ip'])) {
-    $config['webserver']['ip'] = $photobooth->getIp();
-}
-
-if (empty($config['remotebuzzer']['serverip'])) {
-    $config['remotebuzzer']['serverip'] = $photobooth->getIp();
-}
-
-if (empty($config['qr']['url'])) {
-    $config['qr']['url'] = PathUtility::getPublicPath('api/download.php?image=');
-}
-
-if (empty($config['ftp']['template_location']) || !Helper::testFile($config['ftp']['template_location'])) {
-    $config['ftp']['template_location'] = $default_template;
-}
-
-if (!empty($config['ftp']['urlTemplate'])) {
+if ($configurationManager->getByPath('ftp/urlTemplate') !== '') {
     try {
         $parameters = [
             '%website' => $config['ftp']['website'],
@@ -291,9 +245,16 @@ if (!empty($config['ftp']['urlTemplate'])) {
             '%date' => date('Y/m/d'),
         ];
     }
-
-    $config['ftp']['processedTemplate'] = str_replace(array_keys($parameters), array_values($parameters), $config['ftp']['urlTemplate']);
+    $configurationManager->setByPath('ftp/processedTemplate', str_replace(array_keys($parameters), array_values($parameters), $configurationManager->getByPath('ftp/urlTemplate')));
 }
 
-$config['photobooth']['version'] = $photobooth->getVersion();
-$config['photobooth']['basePath'] = PathUtility::getPublicPath();
+$configurationManager->setByPath('cheese_img', $configurationManager->getByPath('ui/shutter_cheese_img'));
+if ($configurationManager->getByPath('cheese_img') !== '') {
+    $configurationManager->setByPath('cheese_img', PathUtility::getPublicPath($configurationManager->getByPath('ui/shutter_cheese_img')));
+}
+
+$configurationManager->setByPath('photobooth/version', $photobooth->getVersion());
+$configurationManager->setByPath('photobooth/basePath', PathUtility::getPublicPath());
+
+$configurationManager->writeConfiguration();
+$config = $configurationManager->getConfiguration();

@@ -67,6 +67,12 @@
  **     * 'unit': Only for type 'range'. Defines the unit of the slider and is used to identify the i18n tag for translation of the unit
  */
 
+use Photobooth\Service\ConfigurationService;
+
+$cm = ConfigurationService::getInstance();
+$defaultConfig = $cm->getDefaultConfiguration();
+$config = $cm->getConfiguration();
+
 $configsetup = [
     'general' => [
         'view' => 'basic',

@@ -9,17 +9,19 @@ use Symfony\Component\Translation\Translator;
 class LanguageService
 {
     private string $locale;
+    private ConfigurationService $configuration;
     private Translator $translator;
 
-    public function __construct(string $locale = 'en', string $localeFolder = 'resources/lang')
+    public function __construct()
     {
-        $this->locale = $locale;
+        $this->configuration = ConfigurationService::getInstance();
+        $this->locale = $this->configuration->getByPath('ui/language');
 
         $translator = new Translator($this->locale);
         $translator->setFallbackLocales(['en']);
         $translator->addLoader('json', new JsonFileLoader());
 
-        $path = PathUtility::getAbsolutePath($localeFolder);
+        $path = PathUtility::getAbsolutePath($this->configuration->getByPath('ui/folders_lang'));
         if (PathUtility::isAbsolutePath($path)) {
             foreach (new \DirectoryIterator($path) as $file) {
                 if(!$file->isFile() || strtolower($file->getExtension() !== 'json')) {
