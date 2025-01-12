@@ -775,7 +775,7 @@ If you're still having trouble feel free to join us at Telegram to get further s
 
 Yes you can. Using the file uploader you can add your video into the `/private/videos/background` folder.
 
-Once done go to [User interface](http://localhost/admin/#userinterface), switch from from `image` to `video` as background and choose your video in "Background video path".
+Once done go to [User interface](http://localhost/admin/#userinterface), switch from `image` to `video` as background and choose your video in "Background video path".
 
 You can also use a youtube video/livestream!\
 In the background video path put the link pulled from youtube. Note that the link should be in the following format: `https://www.youtube.com/embed/<video_id>`.\
